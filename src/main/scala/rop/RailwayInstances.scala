@@ -12,14 +12,20 @@ object RailwayInstances {
 				Kleisli[Try, A, B](a => Try(track(a)))
 
 			override def twoTrack[A, B](track: Try[A] => Try[B]): Kleisli[Try, A, B] =
-				Kleisli[Try, A, B](track compose Try.apply)
+				Kleisli[Try, A, B](a => track(Try(a)))
 
-			override def tee[A](onFailure: => Throwable)(track: A => Unit): Kleisli[Try, A, A] =
+			override def oneTrackTee[A](onFailure: => Throwable)(track: A => Unit): Kleisli[Try, A, A] =
 				Kleisli[Try, A, A] { a =>
 					Try {
 						track(a)
 						a
 					}
+				}
+
+			override def twoTrackTee[A](track: Try[A] => Unit): Kleisli[Try, A, A] =
+				Kleisli[Try, A, A] { a =>
+					track(Try(a))
+					Try(a)
 				}
 		}
 
@@ -31,12 +37,18 @@ object RailwayInstances {
 			override def twoTrack[A, B](track: Either[T, A] => Either[T, B]): Kleisli[Either[T, ?], A, B] =
 				Kleisli[Either[T, ?], A, B](track compose Right.apply)
 
-			override def tee[A](onFailure: => T)(track: A => Unit): Kleisli[Either[T, ?], A, A] =
+			override def oneTrackTee[A](onFailure: => T)(track: A => Unit): Kleisli[Either[T, ?], A, A] =
 				Kleisli[Either[T, ?], A, A] { a =>
 					Either.catchNonFatal {
 						track(a)
 						a
 					}.leftMap(_=> onFailure)
+				}
+
+			override def twoTrackTee[A](track: Either[T, A] => Unit): Kleisli[Either[T, ?], A, A] =
+				Kleisli[Either[T, ?], A, A] { a =>
+					track(Right(a))
+					Right(a)
 				}
 		}
 
@@ -52,12 +64,18 @@ object RailwayInstances {
 			override def twoTrack[A, B](track: Option[A] => Option[B]): Kleisli[Option, A, B] =
 				Kleisli[Option, A, B](track compose Option.apply)
 
-			override def tee[A](onFailure: => None.type)(track: A => Unit): Kleisli[Option, A, A] =
+			override def oneTrackTee[A](onFailure: => None.type)(track: A => Unit): Kleisli[Option, A, A] =
 				Kleisli[Option, A, A] { a =>
 					try {
 						track(a)
 						Some(a)
 					} catch { case _: Exception => None }
+				}
+
+			override def twoTrackTee[A](track: Option[A] => Unit): Kleisli[Option, A, A] =
+				Kleisli[Option, A, A] { a =>
+					track(Some(a))
+					Some(a)
 				}
 		}
 }

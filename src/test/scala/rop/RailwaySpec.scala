@@ -55,8 +55,11 @@ class RailwaySpec extends FlatSpec with Matchers {
 		def nonNegative(name: String): Result[Int, Int] =
 			Railway.fromSwitch[FailFast, Error, Int, Int](_.asRight[Error].ensure(NonEmptyList(FieldNegativeInteger(name), Nil))(_ >= 0))
 
-		def greetUser: Result[User, User] =
-			Railway.fromTee[FailFast, Error, User](NonEmptyList(UnknownError, Nil))(user => println(s"Hello ${user.name}! How are you?"))
+		def log: Result[User, User] =
+			Railway.fromTwoTrackTee[FailFast, Error, User] {
+				case Left(error) => error.toList.foreach(_.toString andThen println)
+				case Right(user) => println(s"Hello ${user.name}! How are you?")
+			}
 
 		// Putting everything together using Railway
 
@@ -74,7 +77,7 @@ class RailwaySpec extends FlatSpec with Matchers {
 			}
 
 		def allTogether(data: FormData): FailFast[User] =
-			(readUser andThen greetUser).run(data)
+			readUser.run(data)
 
 		// Example Users
 
@@ -83,9 +86,9 @@ class RailwaySpec extends FlatSpec with Matchers {
 		val negativeAge = Map("name" -> "Mac Miller", "age" -> "-19")
 		val everything = Map("name" -> "", "age" -> "pimmel")
 
-		println(allTogether(thomas))
-		println(allTogether(noName))
-		println(allTogether(negativeAge))
-		println(allTogether(everything))
+		allTogether(thomas)
+		allTogether(noName)
+		allTogether(negativeAge)
+		allTogether(everything)
 	}
 }

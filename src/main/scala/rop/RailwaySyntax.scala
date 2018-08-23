@@ -20,8 +20,13 @@ object RailwaySyntax {
 			railway.twoTrack(func)
 	}
 
-	implicit class RailwayTee[F[_], T, A](func: A => Unit) {
+	implicit class RailwayOneTrackTee[F[_], T, A](func: A => Unit) {
 		def asRailway(onFailure: => T)(implicit railway: Railway[F, T]): Kleisli[F, A, A] =
-			railway.tee(onFailure)(func)
+			railway.oneTrackTee(onFailure)(func)
+	}
+
+	implicit class RailwayTwoTrackTee[F[_], T, A](func: F[A] => Unit) {
+		def asRailway(implicit railway: Railway[F, T]): Kleisli[F, A, A] =
+			railway.twoTrackTee(func)
 	}
 }

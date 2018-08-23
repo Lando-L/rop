@@ -10,7 +10,8 @@ trait Railway[F[_], T] {
 
 	def oneTrack[A, B](onFailure: => T)(track: A => B): Kleisli[F, A, B]
 	def twoTrack[A, B](track: F[A] => F[B]): Kleisli[F, A, B]
-	def tee[A](onFailure: => T)(track: A => Unit): Kleisli[F, A, A]
+	def oneTrackTee[A](onFailure: => T)(track: A => Unit): Kleisli[F, A, A]
+	def twoTrackTee[A](track: F[A] => Unit): Kleisli[F, A, A]
 }
 
 object Railway {
@@ -23,6 +24,9 @@ object Railway {
 	def fromTwoTrack[F[_], T, A, B](func: F[A] => F[B])(implicit railway: Railway[F, T]): Kleisli[F, A, B] =
 		railway.twoTrack(func)
 
-	def fromTee[F[_], T, A](onFailure: => T)(func: A => Unit)(implicit railway: Railway[F, T]): Kleisli[F, A, A] =
-		railway.tee(onFailure)(func)
+	def fromOneTrackTee[F[_], T, A](onFailure: => T)(func: A => Unit)(implicit railway: Railway[F, T]): Kleisli[F, A, A] =
+		railway.oneTrackTee(onFailure)(func)
+
+	def fromTwoTrackTee[F[_], T, A](func: F[A] => Unit)(implicit railway: Railway[F, T]): Kleisli[F, A, A] =
+		railway.twoTrackTee(func)
 }
