@@ -1,6 +1,5 @@
 package rop
 
-import cats.data.NonEmptyList
 import cats.free.Free
 
 import scala.language.higherKinds
@@ -8,10 +7,10 @@ import scala.language.higherKinds
 object Rop {
 	import Railway._
 
-	def succeed[A](a: A): Free[Railway, A] = Free.liftF(Success(a))
-	def fail[A](error: String): Free[Railway, A] = Free.liftF(Failure(NonEmptyList(error, Nil)))
+	def succeed[E, A](a: A): Free[Railway[E, ?], A] = Free.liftF(Success(a))
+	def fail[E, A](error: E): Free[Railway[E, ?], A] = Free.liftF(Failure(error))
 
-	def catchNonFatal[A, B](onFailure: Throwable => String)(f: A => B)(a: A): Free[Railway, B] = Free.liftF(CatchNonFatal(onFailure, f, a))
-	def ensure[A](filter: A => Boolean)(onFailure: => String)(a: A): Free[Railway, A] = Free.liftF(Ensure(filter, onFailure, a))
-	def fromOption[A, B](onFailure: => String)(f: A => Option[B])(a: A): Free[Railway, B] = Free.liftF(FromOption(onFailure, f, a))
+	def catchNonFatal[E, A, B](onFailure: Throwable => E)(f: A => B)(a: A): Free[Railway[E, ?], B] = Free.liftF(CatchNonFatal(onFailure, f, a))
+	def ensure[E, A](onFailure: => E)(f: A => Boolean)(a: A): Free[Railway[E, ?], A] = Free.liftF(Ensure(onFailure, f, a))
+	def fromOption[E, A, B](onFailure: => E)(f: A => Option[B])(a: A): Free[Railway[E, ?], B] = Free.liftF(FromOption(onFailure, f, a))
 }

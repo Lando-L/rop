@@ -9,19 +9,20 @@ class RopSpec extends FlatSpec with Matchers {
 	"rop" should "be fancy" in {
 
 		type FormData = Map[String, String]
-		type Validated[A] = Free[Railway, A]
+		type Error = String
+		type Validated[A] = Free[Railway[Error, ?], A]
 
 		def getValue(field: String): FormData => Validated[String] =
-			Rop.fromOption[FormData, String](s"Field $field is not defined")(_.get(field))
+			Rop.fromOption[Error, FormData, String](s"Field $field is not defined")(_.get(field))
 
 		def parseInt(field: String): String => Validated[Int] =
-			Rop.catchNonFatal[String, Int](_ => s"Field $field is not a number")(_.toInt)
+			Rop.catchNonFatal[Error, String, Int](_ => s"Field $field is not a number")(_.toInt)
 
 		def nonBlank(field: String): String => Validated[String] =
-			Rop.ensure[String](_.nonEmpty)(s"Field $field is empty")
+			Rop.ensure[Error, String](s"Field $field is empty")(_.nonEmpty)
 
 		def nonNegative(field: String): Int => Validated[Int] =
-			Rop.ensure[Int](_ > 0)(s"Field $field is negative")
+			Rop.ensure[Error, Int](s"Field $field is negative")(_ > 0)
 
 		def readName(field: String): FormData => Validated[String] =
 			getValue(field) andThen (_.flatMap(nonBlank(field)))
@@ -37,6 +38,6 @@ class RopSpec extends FlatSpec with Matchers {
 			} yield greetings
 		}
 
-		println(app(Map("name" -> "Lando", "age" -> "23")).foldMap(FailFast))
+		println(app(Map("name" -> "Lando", "age" -> "23")).foldMap(new FailFast[Error]))
 	}
 }

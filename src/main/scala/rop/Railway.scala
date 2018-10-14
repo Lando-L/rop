@@ -1,16 +1,14 @@
 package rop
 
-import cats.data.NonEmptyList
-
 import scala.language.higherKinds
 
-sealed trait Railway[A]
+sealed trait Railway[E, A]
 
 object Railway {
-	case class Success[A](a: A) extends Railway[A]
-	case class Failure[A](errors: NonEmptyList[String]) extends Railway[A]
+	case class Success[E, A](a: A) extends Railway[E, A]
+	case class Failure[E, A](error: E) extends Railway[E, A]
 
-	case class Ensure[A](filter: A => Boolean, onFailure: String, a: A) extends Railway[A]
-	case class CatchNonFatal[A, B](onFailure: Throwable => String, f: A => B, a: A) extends Railway[B]
-	case class FromOption[A, B](onFailure: String, f: A => Option[B], a: A) extends Railway[B]
+	case class Ensure[E, A](onFailure: E, f: A => Boolean, a: A) extends Railway[E, A]
+	case class CatchNonFatal[E, A, B](onFailure: Throwable => E, f: A => B, a: A) extends Railway[E, B]
+	case class FromOption[E, A, B](onFailure: E, f: A => Option[B], a: A) extends Railway[E, B]
 }
